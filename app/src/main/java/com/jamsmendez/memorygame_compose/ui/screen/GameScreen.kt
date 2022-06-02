@@ -70,6 +70,6 @@ fun GameScreen(
     valueTimer = valueTimer,
     cards = cards,
     onItemSelected = viewModel::onSelectedCard,
-    onBackClicked = viewModel::exitGame
+    onBackClicked = viewModel::showDialogExit
   )
 }

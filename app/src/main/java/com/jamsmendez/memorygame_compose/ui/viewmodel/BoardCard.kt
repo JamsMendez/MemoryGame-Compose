@@ -5,6 +5,6 @@ data class BoardCard(
   val index: Int = -1,
   val image: String = "",
   val isOpen: Boolean = false,
-  val blocked: Boolean = false
+  val enabled: Boolean = true
 )
 

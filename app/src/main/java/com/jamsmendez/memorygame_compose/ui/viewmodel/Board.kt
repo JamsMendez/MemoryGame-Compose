@@ -12,20 +12,17 @@ class Board(
   fun selectedCard(index: Int) {
     if (processing) return
 
-    lock()
+    lockProcess()
 
     var cardList = state.cardList
-    val moves = state.moves
-    val remainingPairs = state.remainingPairs
-    val difficulty = state.difficulty
 
-    val selectedCard = cardList[index].copy(index = index, isOpen = true, blocked = true)
+    val selectedCard = cardList[index].copy(index = index, isOpen = true, enabled = false)
 
     if (firstCard.isOpen) {
       secondCard = selectedCard
 
       cardList = state.cardList.mapIndexed { i, card ->
-        if (i == index) selectedCard else card.copy(blocked = true)
+        if (i == index) selectedCard else card.copy(enabled = false)
       }
 
     } else {
@@ -36,12 +33,13 @@ class Board(
       }
     }
 
-    state = BoardState(
-      cardList = cardList,
-      moves = moves,
-      remainingPairs = remainingPairs,
-      difficulty = difficulty
-    )
+    state = state.copy(cardList = cardList)
+  }
+
+  fun disabledAllCards() {
+    var cardList = state.cardList
+    cardList = cardList.map { card -> card.copy(enabled = false) }
+    state = state.copy(cardList = cardList)
   }
 
   fun validatePairs() {
@@ -59,13 +57,13 @@ class Board(
 
         cardList = cardList.mapIndexed { i, card ->
           if (i == firstCard.index || i == secondCard.index) card.copy(isOpen = true,
-            blocked = false) else card.copy(blocked = false)
+            enabled = true) else card.copy(enabled = true)
         }
 
       } else {
         cardList = cardList.mapIndexed { i, card ->
           if (i == firstCard.index || i == secondCard.index) card.copy(isOpen = false,
-            blocked = false) else card.copy(blocked = false)
+            enabled = true) else card.copy(enabled = true)
         }
 
         firstCard = BoardCard()
@@ -82,12 +80,20 @@ class Board(
       )
     }
 
-    unlock()
+    unlockProcess()
   }
 
   fun hasTwoCardsUp(): Boolean = firstCard.isOpen && secondCard.isOpen
 
   fun finished(): Boolean = state.remainingPairs == 0
+
+  fun lockProcess() {
+    processing = true
+  }
+
+  fun unlockProcess() {
+    processing = false
+  }
 
   fun getState(): BoardState {
     return state
@@ -95,13 +101,5 @@ class Board(
 
   fun setState(state: BoardState) {
     this.state = state
-  }
-
-  fun lock() {
-    processing = true
-  }
-
-  fun unlock() {
-    processing = false
   }
 }

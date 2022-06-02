@@ -38,7 +38,7 @@ fun Board(
       ItemCard(
         image = card.image,
         isOpen = card.isOpen,
-        blocked = card.blocked,
+        enabled = card.enabled,
         onSelected = {
           onItemSelected(index)
         },

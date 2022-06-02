@@ -25,7 +25,7 @@ import com.jamsmendez.memorygame_compose.util.CardFace
 fun ItemCard(
   image: String = "",
   isOpen: Boolean = false,
-  blocked: Boolean = false,
+  enabled: Boolean = true,
   onSelected: () -> Unit = {},
   height: Dp = 0.dp
 ) {
@@ -44,7 +44,7 @@ fun ItemCard(
       .fillMaxWidth()
       .height(height)
       .clickable(
-        enabled = !blocked,
+        enabled = enabled,
         onClick = onSelected
       ),
     cardFace = cardFace,

@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import com.jamsmendez.memorygame_compose.R
 import com.jamsmendez.memorygame_compose.navigation.RouteNavigator
 import com.jamsmendez.memorygame_compose.ui.screen.GameRoute
+import com.jamsmendez.memorygame_compose.util.Constant.Companion.TOTAL_TIME
 import com.jamsmendez.memorygame_compose.util.DialogType
 import com.jamsmendez.memorygame_compose.util.DifficultyType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,7 +28,6 @@ class GameViewModel
   savedStateHandle: SavedStateHandle,
 ) : ViewModel(), RouteNavigator by routerNavigator {
 
-  private val TIMER_TOTAL = 60
   private var isRunning = false
 
   private val difficulty = DifficultyType.valueOf(GameRoute.getDifficulty(savedStateHandle))
@@ -45,21 +45,23 @@ class GameViewModel
   private var _mediaShields: MediaPlayer = MediaPlayer.create(context, R.raw.shields)
   private var _mediaLowShields: MediaPlayer = MediaPlayer.create(context, R.raw.low_shields)
 
-  private val countTimer = object : CountDownTimer((1000 * TIMER_TOTAL).toLong(), 1000) {
+  private val countTimer = object : CountDownTimer((1000 * TOTAL_TIME).toLong(), 1000) {
     override fun onTick(millisUntilFinished: Long) {
       val points = (millisUntilFinished / 1000)
 
-      val value = points.toFloat() / TIMER_TOTAL
+      val value = points.toFloat() / TOTAL_TIME
       _timerDownState.value = value
 
       if (value <= 0.3f && !_mediaLowShields.isPlaying) _mediaLowShields.start()
     }
 
     override fun onFinish() {
-      board.lock()
-      blockCards()
-      showDialogTimeOver()
+      board.lockProcess()
+      board.setState(_boardState.value)
+      board.disabledAllCards()
+      _boardState.value = board.getState()
 
+      showDialogTimeOver()
     }
   }
 
@@ -68,6 +70,8 @@ class GameViewModel
   }
 
   private fun showDialogTimeOver() {
+    restartLowShieldsSound()
+
     _dialogState.value = DialogState(
       "Time is over!",
       "Want to play again?",
@@ -76,8 +80,6 @@ class GameViewModel
       onDismiss = { dismissDialogs() },
       onOk = {
         resetGame()
-        restartLowShieldsSound()
-
         dismissDialogs()
       }
     )
@@ -85,6 +87,7 @@ class GameViewModel
 
   private fun showDialogSuccess() {
     countTimer.cancel()
+    restartLowShieldsSound()
 
     _dialogState.value = DialogState(
       "Congratulations!",
@@ -99,7 +102,7 @@ class GameViewModel
     )
   }
 
-  private fun showDialogExit() {
+  fun showDialogExit() {
     _dialogState.value = DialogState(
       "Exit",
       "Want to exit?",
@@ -119,21 +122,6 @@ class GameViewModel
 
   private fun dismissDialogs() {
     _dialogState.value = DialogState(show = false)
-  }
-
-  private fun blockCards() {
-    var cardList = _boardState.value.cardList
-    val moves = _boardState.value.moves
-    val remainingPairs = _boardState.value.remainingPairs
-
-    cardList = cardList.map { card -> card.copy(blocked = true) }
-
-    _boardState.value = BoardState(
-      cardList = cardList,
-      moves = moves,
-      remainingPairs = remainingPairs,
-      difficulty = difficulty
-    )
   }
 
   private fun distributeCards() {
@@ -176,32 +164,27 @@ class GameViewModel
       remainingPairs = cardList.size / 2,
       difficulty = difficulty,
     )
-
-    board.unlock()
   }
 
   private fun resetGame() {
-    distributeCards()
-
     countTimer.cancel()
-
     restartLowShieldsSound()
+
+    distributeCards()
 
     viewModelScope.launch {
       _timerDownState.value = 1f
-      isRunning = false
-
       _mediaShields.start()
+
+      isRunning = false
 
       val timiMillis: Long = (1000 * 2).toLong()
       delay(timeMillis = timiMillis)
 
       restartShieldsSound()
-    }
-  }
 
-  fun exitGame() {
-    showDialogExit()
+      board.unlockProcess()
+    }
   }
 
   private fun restartShieldsSound() {
@@ -222,13 +205,20 @@ class GameViewModel
     _boardState.value = board.getState()
 
     viewModelScope.launch {
-      if (board.hasTwoCardsUp()) delay(500)
+      if (board.hasTwoCardsUp()) delay(450)
 
       board.validatePairs()
 
       _boardState.value = board.getState()
 
-      if (board.finished()) showDialogSuccess()
+      if (board.finished()) {
+        board.lockProcess()
+        board.setState(_boardState.value)
+        board.disabledAllCards()
+        _boardState.value = board.getState()
+
+        showDialogSuccess()
+      }
     }
 
     if (!isRunning) {
