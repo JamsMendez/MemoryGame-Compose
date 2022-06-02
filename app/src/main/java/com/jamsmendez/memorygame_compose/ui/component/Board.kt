@@ -13,8 +13,6 @@ import androidx.compose.ui.unit.dp
 import com.jamsmendez.memorygame_compose.ui.theme.MemoryGameComposeTheme
 import com.jamsmendez.memorygame_compose.ui.viewmodel.BoardCard
 
-
-
 @Composable
 fun Board(
   modifier: Modifier = Modifier,
@@ -38,7 +36,6 @@ fun Board(
   ) {
     itemsIndexed(cards) { index, card ->
       ItemCard(
-        value = card.value,
         image = card.image,
         isOpen = card.isOpen,
         blocked = card.blocked,

@@ -7,3 +7,4 @@ data class BoardCard(
   val isOpen: Boolean = false,
   val blocked: Boolean = false
 )
+

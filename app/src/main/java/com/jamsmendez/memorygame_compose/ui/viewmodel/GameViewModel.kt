@@ -60,7 +60,6 @@ class GameViewModel
       blockCards()
       showDialogTimeOver()
 
-      restartLowShieldsSound()
     }
   }
 
@@ -77,6 +76,8 @@ class GameViewModel
       onDismiss = { dismissDialogs() },
       onOk = {
         resetGame()
+        restartLowShieldsSound()
+
         dismissDialogs()
       }
     )
